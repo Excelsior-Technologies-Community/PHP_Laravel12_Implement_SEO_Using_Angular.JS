@@ -721,8 +721,11 @@ Now the SEO meta tags will dynamically change based on the slug:
 ---
 
 Your PHP_Laravel12_Implement_SEO_Using_Angular.JS Project is Now Ready!
+<<<<<<< HEAD
 
 
 
 
 
+=======
+>>>>>>> development
