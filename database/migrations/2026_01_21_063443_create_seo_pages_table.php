@@ -14,6 +14,8 @@ return new class extends Migration {
             $table->string('title');
             $table->text('description');
             $table->string('keywords')->nullable();
+            $table->softDeletes();
+            $table->boolean('status')->default(1);
             $table->timestamps();
         });
     }
