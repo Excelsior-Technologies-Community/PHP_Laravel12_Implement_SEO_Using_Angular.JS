@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\SeoPage;
+use Illuminate\Support\Facades\Cache;
 
 class SeoController extends Controller
 {
-    // FRONTEND (SEO RENDER)
     public function show($slug = 'home')
     {
-        $seo = SeoPage::where('slug', $slug)
-            ->where('status', 1)
-            ->first();
+        $seo = Cache::remember("seo_page_{$slug}", 3600, function () use ($slug) {
+            return SeoPage::where('slug', $slug)->where('status', 1)->first();
+        });
 
         if (!$seo) {
             abort(404);
@@ -21,15 +21,20 @@ class SeoController extends Controller
         return view('layouts.app', compact('seo'));
     }
 
-    // ADMIN LIST + SEARCH
+    public function sitemap()
+    {
+        $pages = SeoPage::where('status', 1)->get();
+        return response()->view('sitemap', compact('pages'))->header('Content-Type', 'text/xml');
+    }
+
     public function index(Request $request)
     {
         $query = SeoPage::query();
 
         if ($request->search) {
             $query->where('title', 'like', '%' . $request->search . '%')
-                  ->orwhere('description', 'like', '%' . $request->search . '%')
-                  ->orwhere('keywords', 'like', '%' . $request->search . '%');
+                  ->orWhere('description', 'like', '%' . $request->search . '%')
+                  ->orWhere('keywords', 'like', '%' . $request->search . '%');
         }
 
         $pages = $query->paginate(4);
@@ -37,7 +42,6 @@ class SeoController extends Controller
         return view('admin.index', compact('pages'));
     }
 
-    // CREATE
     public function create()
     {
         return view('admin.create');
@@ -49,7 +53,6 @@ class SeoController extends Controller
         return redirect()->route('admin.index')->with('success', 'Created!');
     }
 
-    // EDIT
     public function edit($id)
     {
         $page = SeoPage::findOrFail($id);
@@ -61,46 +64,52 @@ class SeoController extends Controller
         $page = SeoPage::findOrFail($id);
         $page->update($request->all());
 
+        Cache::forget("seo_page_{$page->slug}");
+
         return redirect()->route('admin.index')->with('success', 'Updated!');
     }
 
-    // DELETE (SOFT)
     public function destroy($id)
     {
-        SeoPage::findOrFail($id)->delete();
+        $page = SeoPage::findOrFail($id);
+        Cache::forget("seo_page_{$page->slug}");
+        $page->delete();
+
         return back()->with('success', 'Deleted!');
     }
 
-    // TRASH
     public function trash()
     {
         $pages = SeoPage::onlyTrashed()->get();
         return view('admin.trash', compact('pages'));
     }
 
-    // RESTORE
     public function restore($id)
     {
-        SeoPage::withTrashed()->find($id)->restore();
+        $page = SeoPage::withTrashed()->find($id);
+        $page->restore();
+        Cache::forget("seo_page_{$page->slug}");
+
         return back()->with('success', 'Restored!');
     }
 
-    // FORCE DELETE
     public function forceDelete($id)
     {
-        SeoPage::withTrashed()->find($id)->forceDelete();
+        $page = SeoPage::withTrashed()->find($id);
+        Cache::forget("seo_page_{$page->slug}");
+        $page->forceDelete();
+
         return back()->with('success', 'Permanently Deleted!');
     }
 
-    // STATUS TOGGLE
     public function toggle($id)
     {
         $page = SeoPage::findOrFail($id);
         $page->status = !$page->status;
         $page->save();
 
+        Cache::forget("seo_page_{$page->slug}");
+
         return back();
     }
-
-
 }
