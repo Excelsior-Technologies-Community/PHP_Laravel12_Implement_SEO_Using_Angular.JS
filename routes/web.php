@@ -3,10 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SeoController;
 
-// HOME
 Route::get('/', [SeoController::class, 'show'])->name('home');
 
-// ADMIN
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap']);
+
 Route::prefix('admin')->group(function () {
     Route::get('/', [SeoController::class, 'index'])->name('admin.index');
     Route::get('/create', [SeoController::class, 'create']);
@@ -20,7 +20,6 @@ Route::prefix('admin')->group(function () {
     Route::get('/force-delete/{id}', [SeoController::class, 'forceDelete']);
 });
 
-// SEO pages
 Route::get('/{slug}', [SeoController::class, 'show'])
     ->where('slug', '[A-Za-z0-9\-]+')
     ->name('seo.page');
