@@ -22,4 +22,4 @@ Route::prefix('admin')->group(function () {
 
 Route::get('/{slug}', [SeoController::class, 'show'])
     ->where('slug', '[A-Za-z0-9\-]+')
-    ->name('seo.page'); 
+    ->name('seo.page');
